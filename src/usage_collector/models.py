@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import hashlib
+import re
 from dataclasses import dataclass, field
+from pathlib import Path, PureWindowsPath
 from typing import Any
 
 
@@ -18,6 +21,53 @@ FIELD_ORDER = (
     "source_reliability",
     "source_provenance",
 )
+
+_RE_TRAVERSAL = re.compile(r"(?:^|[/\\])\.\.(?:[/\\]|$)")
+_RE_WIN_DRIVE = re.compile(r"^[A-Za-z]:[/\\]")
+_RE_UNC = re.compile(r"^[/\\]{2}")
+
+
+def _is_absolute_path(value: str) -> bool:
+    if not value:
+        return False
+    if value.startswith("/"):
+        return True
+    try:
+        p = Path(value)
+        if p.is_absolute():
+            return True
+    except (ValueError, TypeError):
+        pass
+    try:
+        wp = PureWindowsPath(value)
+        if wp.is_absolute():
+            return True
+    except (ValueError, TypeError):
+        pass
+    if _RE_WIN_DRIVE.match(value):
+        return True
+    if _RE_UNC.match(value):
+        return True
+    return False
+
+
+def _is_traversal_path(value: str) -> bool:
+    if not value:
+        return False
+    return bool(_RE_TRAVERSAL.search(value))
+
+
+def _hash_path(value: str) -> str:
+    digest = hashlib.sha256(value.encode("utf-8")).hexdigest()
+    return f"path-hash:{digest[:16]}"
+
+
+def sanitize_path_field(value: str | None) -> str | None:
+    if value is None:
+        return None
+    if not _is_absolute_path(value) and not _is_traversal_path(value):
+        return value
+    return _hash_path(value)
 
 
 @dataclass(frozen=True)
@@ -44,7 +94,7 @@ class NormalizedUsageRecord:
     def to_row(self) -> dict[str, Any]:
         return {
             "provider": self.provider,
-            "source_identifier": self.source_identifier,
+            "source_identifier": sanitize_path_field(self.source_identifier) or "",
             "event_id": self.event_id,
             "occurred_at": self.occurred_at,
             "captured_at": self.captured_at,
@@ -54,7 +104,7 @@ class NormalizedUsageRecord:
             "cost": self.cost,
             "quota": self.quota,
             "source_reliability": self.source_reliability,
-            "source_provenance": self.source_provenance,
+            "source_provenance": sanitize_path_field(self.source_provenance),
         }
 
     @classmethod

@@ -30,6 +30,25 @@ values.
 Raw prompt content, raw response content, API keys, cookies, and unredacted
 absolute paths must never appear in a usage record.
 
+### Source Path Sanitization
+
+The `source_identifier` and `source_provenance` fields are sanitized at the
+persistence boundary (`to_row()`). The following patterns are detected and
+replaced with a deterministic non-reversible SHA-256 hash prefix:
+
+- **Windows absolute paths** — e.g. `C:\Users\...`, `D:\tools\...`
+- **POSIX absolute paths** — e.g. `/home/user/...`, `/opt/agent/...`
+- **UNC paths** — e.g. `\\server\share\...`
+- **Traversal-oriented paths** — e.g. `../../etc/...`, `..\..\config\...`
+
+A safe value is replaced with `path-hash:<sha256-prefix>`. Values that are
+already logical labels (no path separators, drive letters, or traversal
+patterns) are stored as-is.
+
+The hash is deterministic: the same absolute path always produces the same
+hash prefix, which preserves the dedupe property across records from the same
+source.
+
 ## SQLite Schema
 
 ### `usage_records`

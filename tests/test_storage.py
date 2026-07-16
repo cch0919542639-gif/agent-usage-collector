@@ -168,6 +168,20 @@ class TestNoForbiddenContent:
         assert "api_key" not in row
         assert "cookie" not in row
 
+    def test_to_row_sanitizes_absolute_source_identifier(self) -> None:
+        record = _make_record(source_identifier=r"C:\Users\me\sessions\opencode.json")
+        row = record.to_row()
+        raw = row["source_identifier"]
+        assert "C:\\Users\\me\\sessions\\opencode.json" not in raw
+        assert raw.startswith("path-hash:")
+
+    def test_to_row_sanitizes_absolute_source_provenance(self) -> None:
+        record = _make_record(source_provenance="/home/user/.cache/provider/log.json")
+        row = record.to_row()
+        raw = row.get("source_provenance", "")
+        assert "/home/user/.cache/provider/log.json" not in raw
+        assert raw.startswith("path-hash:")
+
 
 # ─── 6. Aggregate queries ──────────────────────────────────────────────
 
@@ -240,7 +254,111 @@ class TestTempDirectoryIsolation:
         assert not any(Path.cwd().glob("*.sqlite3"))
 
 
-# ─── 8. Batch operations ───────────────────────────────────────────────
+# ─── 8. Path sanitization ──────────────────────────────────────────────
+
+
+class TestPathSanitization:
+    """Absolute and traversal paths in source_identifier and source_provenance
+    must be transformed to a safe hash before persistence."""
+
+    UNSAFE_PATHS = [
+        ("windows-abs", r"C:\Users\angel\.config\provider\log.json"),
+        ("windows-abs-alt", r"D:\tools\agent\session.log"),
+        ("posix-abs", "/home/user/.config/provider/log.json"),
+        ("posix-abs-opt", "/opt/agent/data/session-123.json"),
+        ("unc", r"\\server\share\provider\logs"),
+        ("unc-alt", r"\\nas\team\agent-data\session.log"),
+        ("traversal-up", "../../etc/passwd"),
+        ("traversal-deep", "logs/../../../secret.key"),
+        ("traversal-windows", r"..\..\config\credentials.json"),
+    ]
+
+    def _assert_sanitized(self, unsafe_value: str) -> None:
+        from usage_collector.models import sanitize_path_field
+        result = sanitize_path_field(unsafe_value)
+        assert result is not None
+        assert result != unsafe_value, f"Value was not transformed: {unsafe_value}"
+        assert result.startswith("path-hash:"), f"Result does not start with path-hash: {result}"
+        assert "/" not in result[10:], f"Hash segment contains path separator: {result}"
+        assert "\\" not in result[10:], f"Hash segment contains backslash: {result}"
+        assert ".." not in result, f"Hash segment contains traversal: {result}"
+
+    def test_all_unsafe_path_types_are_transformed(self) -> None:
+        for name, path in self.UNSAFE_PATHS:
+            self._assert_sanitized(path)
+
+    def test_safe_logical_label_preserved(self) -> None:
+        from usage_collector.models import sanitize_path_field
+        safe_labels = [
+            "opencode-session-123",
+            "provider:claude-code:session-456",
+            "log-2026-07-16",
+            "session_abc123",
+            "event-001",
+        ]
+        for label in safe_labels:
+            assert sanitize_path_field(label) == label
+
+    def test_none_preserved(self) -> None:
+        from usage_collector.models import sanitize_path_field
+        assert sanitize_path_field(None) is None
+
+    def test_same_path_produces_same_hash(self) -> None:
+        from usage_collector.models import sanitize_path_field
+        path = r"C:\Users\angel\.config\provider\log.json"
+        h1 = sanitize_path_field(path)
+        h2 = sanitize_path_field(path)
+        assert h1 == h2
+
+    def test_different_paths_produce_different_hashes(self) -> None:
+        from usage_collector.models import sanitize_path_field
+        h1 = sanitize_path_field(r"C:\path\one.log")
+        h2 = sanitize_path_field(r"D:\path\two.log")
+        assert h1 != h2
+
+    def test_windows_abs_in_source_identifier_not_stored_raw(self, repo: UsageRepository) -> None:
+        record = _make_record(source_identifier=r"C:\Users\me\session.log")
+        repo.insert_record(record)
+        stored = repo.get_records_by_provider("test-provider")
+        assert len(stored) == 1
+        assert "C:\\Users\\me\\session.log" not in stored[0].source_identifier
+        assert stored[0].source_identifier.startswith("path-hash:")
+
+    def test_posix_abs_in_source_provenance_not_stored_raw(self, repo: UsageRepository) -> None:
+        record = _make_record(source_provenance="/home/user/.local/share/agent/data.json")
+        repo.insert_record(record)
+        stored = repo.get_records_by_provider("test-provider")
+        assert len(stored) == 1
+        assert "/home/user/.local/share/agent/data.json" not in str(stored[0].source_provenance)
+        if stored[0].source_provenance:
+            assert stored[0].source_provenance.startswith("path-hash:")
+
+    def test_unc_path_not_stored_raw(self, repo: UsageRepository) -> None:
+        record = _make_record(source_provenance=r"\\nas\team\agent-data\session.log")
+        repo.insert_record(record)
+        stored = repo.get_records_by_provider("test-provider")
+        assert len(stored) == 1
+        raw = str(stored[0].source_provenance or "")
+        assert "\\\\nas\\team\\agent-data" not in raw
+        assert raw.startswith("path-hash:")
+
+    def test_traversal_path_not_stored_raw(self, repo: UsageRepository) -> None:
+        record = _make_record(source_identifier="../../../etc/shadow")
+        repo.insert_record(record)
+        stored = repo.get_records_by_provider("test-provider")
+        assert len(stored) == 1
+        assert "../../../etc/shadow" not in stored[0].source_identifier
+        assert stored[0].source_identifier.startswith("path-hash:")
+
+    def test_deterministic_hash_enables_correct_dedupe(self, repo: UsageRepository) -> None:
+        r1 = _make_record(event_id="dedupe-path-1", source_identifier=r"C:\Users\me\session.log")
+        r2 = _make_record(event_id="dedupe-path-1", source_identifier=r"C:\Users\me\session.log")
+        repo.insert_record(r1)
+        repo.insert_record(r2)
+        assert repo.get_record_count("test-provider") == 1
+
+
+# ─── 9. Batch operations ───────────────────────────────────────────────
 
 
 class TestBatchOperations:
