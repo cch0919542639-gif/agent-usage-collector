@@ -12,7 +12,8 @@
 
 ## Active Work
 
-- Review the `usage-mvp-01` source inventory and privacy checklist.
+- `usage-mvp-01` received a field-completeness `needs_fix` review; dispatch
+  `usage-mvp-01-fix` before selecting the first collector adapter.
 - Choose the first approved structured source, then create the collector-adapter
   task packet.
 
