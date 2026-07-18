@@ -31,9 +31,11 @@ usage data to a remote service.
 
 ## Project Workflow
 
-Read [AGENTS.md](AGENTS.md) before working. Active work is recorded in
+Read [AGENTS.md](AGENTS.md), [PLAN.md](PLAN.md), and
+[PROGRESS.md](PROGRESS.md) before working. Active work is recorded in
 `coordination/task-board/`; delivery requires a task-card transition, progress
-record, delivery report, tests, and a pushed branch.
+record, delivery report, tests, and a pushed branch. The complete context
+workflow is in [docs/operations/work-context-workflow.md](docs/operations/work-context-workflow.md).
 
 ## Initial Plan
 

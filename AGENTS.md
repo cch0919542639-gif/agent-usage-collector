@@ -1,5 +1,12 @@
 # Worker Rules
 
+## Context Kit
+
+Before acting, read `PLAN.md`, `PROGRESS.md`, and `TASKS.md`, then the assigned
+task card. Read `DECISIONS.md`, `ARCHITECTURE.md`, and `MEMORY.md` only when
+the current decision needs them. The detailed workflow is documented in
+`docs/operations/work-context-workflow.md`.
+
 ## Required Workflow
 
 1. Pull the latest `main` in the correct repository.
