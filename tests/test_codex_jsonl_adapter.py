@@ -294,6 +294,56 @@ class TestNestedForbiddenKeys:
         assert len(records) == 1
 
 
+class TestMissingAliases:
+    """Regression: the reviewer identified five missing forbidden-key aliases.
+
+    Each alias is tested at three depths:
+      - top-level key in the JSONL object
+      - nested dict key inside payload
+      - nested list item key inside payload
+    """
+
+    MISSING_ALIASES = ["raw_prompt", "raw_response", "api_key", "cookies", "credentials"]
+
+    def test_top_level_rejected(self) -> None:
+        for alias in self.MISSING_ALIASES:
+            line = json.dumps({
+                "timestamp": "2026-07-19T10:00:00",
+                alias: "secret-value",
+                "payload": {"id": f"evt-top-{alias}"},
+            })
+            records, _ = parse_codex_jsonl(line)
+            assert len(records) == 0, f"Alias '{alias}' at top level was not filtered"
+
+    def test_nested_dict_rejected(self) -> None:
+        for alias in self.MISSING_ALIASES:
+            line = json.dumps({
+                "timestamp": "2026-07-19T10:00:00",
+                "payload": {"id": f"evt-nested-{alias}", "meta": {alias: "secret"}},
+            })
+            records, _ = parse_codex_jsonl(line)
+            assert len(records) == 0, f"Alias '{alias}' in nested dict was not filtered"
+
+    def test_nested_list_rejected(self) -> None:
+        for alias in self.MISSING_ALIASES:
+            line = json.dumps({
+                "timestamp": "2026-07-19T10:00:00",
+                "payload": {"id": f"evt-list-{alias}", "items": [{alias: "secret"}]},
+            })
+            records, _ = parse_codex_jsonl(line)
+            assert len(records) == 0, f"Alias '{alias}' in nested list was not filtered"
+
+    def test_all_plural_forms_rejected(self) -> None:
+        plurals = ["cookies", "credentials"]
+        for key in plurals:
+            line = json.dumps({
+                "timestamp": "2026-07-19T10:00:00",
+                "payload": {"id": f"evt-plural-{key}", key: "secret"},
+            })
+            records, _ = parse_codex_jsonl(line)
+            assert len(records) == 0, f"Plural '{key}' was not filtered"
+
+
 class TestFileBasedParsing:
     def test_parse_file(self, tmp_path: Path) -> None:
         fp = tmp_path / "fixture.jsonl"

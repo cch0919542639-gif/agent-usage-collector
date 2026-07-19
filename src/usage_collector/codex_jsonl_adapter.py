@@ -12,7 +12,9 @@ METADATA_RECORD_TYPES = frozenset({"session_meta", "session", "meta"})
 FORBIDDEN_CONTENT_KEYS: frozenset[str] = frozenset({
     "content", "prompt", "response", "instruction", "feedback",
     "message", "messages", "choices",
-    "credential", "cookie", "account",
+    "raw_prompt", "raw_response",
+    "api_key",
+    "credential", "credentials", "cookie", "cookies", "account",
     "project-path", "project_path", "source-code", "source_code",
 })
 

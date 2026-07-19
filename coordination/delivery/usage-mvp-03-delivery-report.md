@@ -45,7 +45,7 @@ calls, or storage changes were introduced.
    metadata boundary, forbidden content handling, unsupported sources, cursor
    semantics, and residual privacy limitations.
 
-## Fix Round (needs_fix → resubmit)
+## Fix Round 1 (needs_fix → resubmit)
 
 Review **P1** required recursive traversal of nested dictionaries and lists
 when detecting forbidden content-bearing keys.
@@ -56,15 +56,25 @@ when detecting forbidden content-bearing keys.
 - 8 new regression tests cover nested keys at multiple depths, list-of-object
   payloads, and top-level deeply nested keys.
 
+## Fix Round 2 (needs_fix → resubmit)
+
+Review identified five more missing forbidden-key aliases:
+`raw_prompt`, `raw_response`, `api_key`, `cookies`, `credentials`.
+
+- Added all five to `FORBIDDEN_CONTENT_KEYS`, including singular/plural pairs
+  (`cookie`/`cookies`, `credential`/`credentials`).
+- 4 new test methods (`TestMissingAliases`) covering each alias at top-level,
+  nested dict depth, and nested list depth.
+
 ## Validation Results
 
 ```
 python -m pytest tests/ -v
-=> 72 passed in 1.02s
+=> 76 passed in 1.10s
 ```
 
-- 36 adapter tests (28 original + 8 nested-key regression tests); 0 regressions
-  in existing storage tests.
+- 40 adapter tests (28 original + 8 nested-key + 4 alias regression); 0
+  regressions in existing storage tests.
 - Zero external dependencies added (stdlib only: `json`, `datetime`, `pathlib`).
 - No storage schema changes.
 
