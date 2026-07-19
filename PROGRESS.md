@@ -10,8 +10,8 @@
 
 ## Active Work
 
-- `usage-mvp-03` is ready for the platform implementation agent: a
-  fixture-backed Codex JSONL metadata adapter with no live scanning or polling.
+- `usage-mvp-03` resubmitted after P1 fix: recursive nested forbidden-key
+  detection; 8 regression tests; all 72 tests pass.
 
 ## Known Risks
 
@@ -21,5 +21,4 @@
 
 ## Next Action
 
-Dispatch and review `usage-mvp-03`, then use its fixture-backed parser as the
-foundation for a bounded local collection command.
+Review the resubmitted `usage-mvp-03`, then open bounded collection work.
