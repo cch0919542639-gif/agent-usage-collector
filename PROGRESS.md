@@ -10,8 +10,8 @@
 
 ## Active Work
 
-- `usage-mvp-03` resubmitted after P1 fix: recursive nested forbidden-key
-  detection; 8 regression tests; all 72 tests pass.
+- `usage-mvp-03` is accepted after recursive content-key and alias privacy
+  fixes; 40 focused and 76 total tests pass in isolated-source verification.
 
 ## Known Risks
 
@@ -21,4 +21,5 @@
 
 ## Next Action
 
-Review the resubmitted `usage-mvp-03`, then open bounded collection work.
+Open bounded collection work that reads only an explicitly configured synthetic
+or approved local metadata source and persists through `UsageRepository`.
