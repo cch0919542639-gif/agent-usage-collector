@@ -4,6 +4,7 @@
 
 - Accepted the provider source inventory after completing the explicit
   provider-field matrix and privacy recheck.
+- Opened `usage-mvp-03` for the first fixture-backed Codex metadata adapter.
 
 ## 2026-07-18
 

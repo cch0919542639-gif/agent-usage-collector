@@ -10,8 +10,8 @@
 
 ## Active Work
 
-- Select the first approved structured Codex source and create the
-  fixture-backed collector-adapter task packet.
+- `usage-mvp-03` is ready for the platform implementation agent: a
+  fixture-backed Codex JSONL metadata adapter with no live scanning or polling.
 
 ## Known Risks
 
@@ -21,5 +21,5 @@
 
 ## Next Action
 
-Create and dispatch the first fixture-backed Codex collector adapter against
-the accepted source contract.
+Dispatch and review `usage-mvp-03`, then use its fixture-backed parser as the
+foundation for a bounded local collection command.
