@@ -1,7 +1,7 @@
 ---
 task_id: usage-mvp-04
 phase: usage-mvp-foundation
-status: READY
+status: REVIEW
 owner: external-agent-platform-32
 reviewer: ORCHESTRATOR
 priority: high
