@@ -12,6 +12,9 @@
 
 - `usage-mvp-03` is accepted after recursive content-key and alias privacy
   fixes; 40 focused and 76 total tests pass in isolated-source verification.
+- `usage-mvp-04` is assigned to `external-agent-platform-32` for a bounded,
+  explicit-input collection service. It is the controlled end-to-end proof of
+  local worker activation, claim, delivery, and review.
 
 ## Known Risks
 
@@ -21,5 +24,5 @@
 
 ## Next Action
 
-Open bounded collection work that reads only an explicitly configured synthetic
-or approved local metadata source and persists through `UsageRepository`.
+Monitor `usage-mvp-04` through its worker handoff and review its repository
+evidence when submitted.
