@@ -312,3 +312,61 @@ class TestEpochTimestampConversion:
         text = '{"timestamp": "2026-07-19T10:00:00Z", "payload": {"id": "evt-001"}}'
         result = parse_fixture_text(text)
         assert result.records[0].occurred_at == "2026-07-19T10:00:00Z"
+
+
+# ─── 10. Nested forbidden structures ──────────────────────────────────
+
+
+class TestNestedForbiddenStructures:
+    def test_deeply_nested_forbidden_key_ignored(self) -> None:
+        text = '{"timestamp": "2026-07-19T10:00:00Z", "payload": {"id": "evt-001", "data": {"nested": {"prompt": "secret"}}}}'
+        result = parse_fixture_text(text)
+        assert len(result.records) == 0
+
+    def test_forbidden_key_in_list_ignored(self) -> None:
+        text = '{"timestamp": "2026-07-19T10:00:00Z", "payload": {"id": "evt-001", "items": [{"content": "secret"}]}}'
+        result = parse_fixture_text(text)
+        assert len(result.records) == 0
+
+    def test_forbidden_key_in_messages_list_ignored(self) -> None:
+        text = '{"timestamp": "2026-07-19T10:00:00Z", "payload": {"id": "evt-001", "messages": [{"role": "user", "content": "hello"}]}}'
+        result = parse_fixture_text(text)
+        assert len(result.records) == 0
+
+    def test_forbidden_key_in_nested_config_ignored(self) -> None:
+        text = '{"timestamp": "2026-07-19T10:00:00Z", "payload": {"id": "evt-001", "config": {"api_key": "sk-xxx"}}}'
+        result = parse_fixture_text(text)
+        assert len(result.records) == 0
+
+    def test_forbidden_key_in_deeply_nested_tree_ignored(self) -> None:
+        text = '{"timestamp": "2026-07-19T10:00:00Z", "payload": {"id": "evt-001", "tree": {"a": {"b": {"c": {"source_code": "print()"}}}}}}'
+        result = parse_fixture_text(text)
+        assert len(result.records) == 0
+
+    def test_nested_fixture_file_ignored(self) -> None:
+        result = parse_fixture_file(FIXTURES_DIR / "nested_forbidden.jsonl")
+        assert len(result.records) == 0
+        assert result.lines_ignored == 5
+
+    def test_forbidden_key_in_list_of_lists_ignored(self) -> None:
+        text = '{"timestamp": "2026-07-19T10:00:00Z", "payload": {"id": "evt-001", "matrix": [[{"response": "secret"}]]}}'
+        result = parse_fixture_text(text)
+        assert len(result.records) == 0
+
+    def test_forbidden_key_in_tuple_like_list_ignored(self) -> None:
+        text = '{"timestamp": "2026-07-19T10:00:00Z", "payload": {"id": "evt-001", "data": ["normal", "text", "values"]}}'
+        result = parse_fixture_text(text)
+        # "text" is a forbidden key name, but this is a string value not a dict key
+        # The check is for dict keys, not string values
+        assert len(result.records) == 1
+
+    def test_clean_nested_structure_accepted(self) -> None:
+        text = '{"timestamp": "2026-07-19T10:00:00Z", "payload": {"id": "evt-001", "data": {"nested": {"safe": "value"}}}}'
+        result = parse_fixture_text(text)
+        assert len(result.records) == 1
+        assert result.records[0].event_id == "evt-001"
+
+    def test_clean_nested_list_accepted(self) -> None:
+        text = '{"timestamp": "2026-07-19T10:00:00Z", "payload": {"id": "evt-001", "items": [{"safe": "value"}]}}'
+        result = parse_fixture_text(text)
+        assert len(result.records) == 1

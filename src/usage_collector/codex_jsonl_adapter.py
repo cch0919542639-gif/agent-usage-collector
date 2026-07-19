@@ -94,15 +94,27 @@ def _extract_timestamp(line_data: dict[str, Any]) -> str | None:
     return None
 
 
-def _has_forbidden_keys(line_data: dict[str, Any]) -> bool:
-    """Check if a JSONL line contains any forbidden content-bearing keys."""
-    # Check top-level keys
-    if set(line_data.keys()) & _FORBIDDEN_PAYLOAD_KEYS:
-        return True
-    # Check nested payload
-    payload = line_data.get("payload")
-    if isinstance(payload, dict) and set(payload.keys()) & _FORBIDDEN_PAYLOAD_KEYS:
-        return True
+def _has_forbidden_keys_recursive(obj: Any) -> bool:
+    """Recursively check if an object contains any forbidden content-bearing keys.
+
+    Checks all dictionaries at any nesting depth, and all items within lists.
+    A record containing nested keys such as message, content, prompt, or
+    source_code must be ignored or rejected without reading, logging, or
+    preserving its value.
+    """
+    if isinstance(obj, dict):
+        # Check if any key at this level is forbidden
+        if set(obj.keys()) & _FORBIDDEN_PAYLOAD_KEYS:
+            return True
+        # Recurse into all values
+        for value in obj.values():
+            if _has_forbidden_keys_recursive(value):
+                return True
+    elif isinstance(obj, list):
+        # Recurse into all list items
+        for item in obj:
+            if _has_forbidden_keys_recursive(item):
+                return True
     return False
 
 
@@ -123,8 +135,8 @@ def _parse_jsonl_line(
     if not isinstance(line_data, dict):
         return None
 
-    # Skip content-bearing or forbidden records
-    if _has_forbidden_keys(line_data):
+    # Skip content-bearing or forbidden records (recursive check)
+    if _has_forbidden_keys_recursive(line_data):
         return None
 
     # Extract required fields
