@@ -12,8 +12,8 @@ Task lifecycle is stored in `coordination/task-board/`:
 
 ## Current Work Groups
 
-- `usage-mvp-01`: provider source inventory and privacy checklist; submitted on
-  the worker branch, awaiting review.
+- `usage-mvp-01`: provider source inventory and privacy checklist; accepted
+  after the `usage-mvp-01-fix` field-matrix correction.
 - `usage-mvp-02`: storage and normalization foundation; accepted.
 - Next: fixture-backed provider adapter after source inventory acceptance.
 

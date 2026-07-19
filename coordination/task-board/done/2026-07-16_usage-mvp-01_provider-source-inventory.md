@@ -1,7 +1,7 @@
 ---
 task_id: usage-mvp-01
 phase: usage-mvp-foundation
-status: READY
+status: DONE
 owner: external-agent-research-01
 reviewer: ORCHESTRATOR
 priority: high
@@ -26,6 +26,9 @@ expected_artifacts:
   - delivery_report
 ---
 # Task Packet
+
+> Resolved by `usage-mvp-01-fix`. See
+> `coordination/reviews/review-usage-mvp-01-fix.md` for the acceptance record.
 
 ## Objective
 

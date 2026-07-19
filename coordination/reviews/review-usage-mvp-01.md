@@ -42,3 +42,8 @@ The submitted work stayed within allowed documentation and coordination scope.
 ## Accepted Artifacts
 
 - None pending the documented correction.
+
+## Correction Outcome
+
+Resolved and accepted by `usage-mvp-01-fix`; see
+`coordination/reviews/review-usage-mvp-01-fix.md`.

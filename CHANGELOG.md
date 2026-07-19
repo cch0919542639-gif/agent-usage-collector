@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-07-19
+
+- Accepted the provider source inventory after completing the explicit
+  provider-field matrix and privacy recheck.
+
 ## 2026-07-18
 
 - Added the project context kit and progressive-disclosure workflow entry.
